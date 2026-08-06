@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0d10;
+    --bg-elev: #12151a;
+    --bg-elev-2: #171b21;
+    --border: #232830;
+    --border-strong: #2f3641;
+    --text: #e6e9ee;
+    --text-muted: #8a94a3;
+    --text-dim: #5c6675;
+    --accent: #7cc4ff;
+    --accent-strong: #4aa3ff;
+
+    /* vendor colors */
+    --v-openai: #10a37f;
+    --v-anthropic: #d97757;
+    --v-google: #4285f4;
+    --v-xai: #cccccc;
+    --v-meta: #0668e1;
+    --v-deepseek: #4a7cff;
+    --v-alibaba: #ff6a00;
+    --v-mistral: #ff7000;
+    --v-moonshot: #b47cff;
+    --v-cohere: #ff6b9d;
+
+    /* tier colors */
+    --t-frontier: #ff8a5b;
+    --t-balanced: #7cc4ff;
+    --t-fast: #a7f070;
+    --t-reasoning: #d17cff;
+    --t-coding: #ffd166;
+    --t-vision: #ff6b9d;
+    --t-nano: #6c7280;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 14px; line-height: 1.5; }
+  body { min-height: 100vh; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { color: var(--accent-strong); text-decoration: underline; }
+  code, .mono { font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; }
+
+  /* header */
+  header {
+    padding: 20px 28px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-elev);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  header h1 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+  header .subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .meta-info { font-size: 12px; color: var(--text-muted); text-align: right; }
+  .meta-info .count { color: var(--text); font-weight: 500; }
+
+  /* tabs */
+  nav.tabs {
+    display: flex;
+    gap: 4px;
+    padding: 0 28px;
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color .15s, border-color .15s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+  main { padding: 20px 28px 40px; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* filters bar */
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    padding: 12px 14px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  .filter-group { display: flex; align-items: center; gap: 6px; }
+  .filter-group label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .filters select, .filters input[type=text], .filters input[type=number] {
+    background: var(--bg-elev-2);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    padding: 5px 8px;
+    border-radius: 5px;
+    font-family: inherit;
+    font-size: 12px;
+    outline: none;
+  }
+  .filters select:focus, .filters input:focus { border-color: var(--accent); }
+  .filters .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    user-select: none;
+  }
+  .filters .chip.on {
+    background: rgba(124, 196, 255, 0.12);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .filters .spacer { flex: 1; }
+  .filters .reset { color: var(--text-muted); font-size: 12px; cursor: pointer; text-decoration: underline; }
+  .filters .reset:hover { color: var(--text); }
+
+  /* compare table */
+  .table-wrap {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: auto;
+    max-height: calc(100vh - 260px);
+  }
+  table.compare {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+  table.compare thead th {
+    position: sticky;
+    top: 0;
+    background: var(--bg-elev-2);
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 500;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-strong);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  table.compare thead th:hover { color: var(--text); }
+  table.compare thead th.sort-asc::after { content: ' ↑'; color: var(--accent); }
+  table.compare thead th.sort-desc::after { content: ' ↓'; color: var(--accent); }
+  table.compare tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; }
+  table.compare tbody tr:hover { background: var(--bg-elev-2); }
+  table.compare tbody td { padding: 8px 12px; vertical-align: middle; }
+  table.compare .col-vendor { font-weight: 500; }
+  table.compare .col-variant { font-weight: 500; color: var(--text); }
+  table.compare .num { font-family: 'JetBrains Mono', monospace; text-align: right; }
+  table.compare .status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .status-current { background: rgba(167, 240, 112, 0.15); color: #a7f070; }
+  .status-superseded { background: rgba(140, 148, 163, 0.15); color: #8a94a3; }
+  .status-deprecated { background: rgba(255, 138, 91, 0.15); color: #ff8a5b; }
+  .status-legacy { background: rgba(92, 102, 117, 0.2); color: #8a94a3; }
+
+  .tier-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  /* lineage view */
+  .lineage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 16px;
+  }
+  .vendor-column {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    overflow: hidden;
+  }
+  .vendor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .vendor-header .name { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+  .vendor-header .count { font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+  .vendor-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 8px; vertical-align: middle; }
+
+  .timeline { position: relative; padding-left: 18px; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 6px;
+    bottom: 6px;
+    width: 1.5px;
+    background: var(--border-strong);
+  }
+  .lineage-item {
+    position: relative;
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .lineage-item:hover { border-color: var(--accent); background: rgba(124, 196, 255, 0.04); }
+  .lineage-item::before {
+    content: '';
+    position: absolute;
+    left: -18px;
+    top: 14px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--bg-elev);
+    border: 2px solid var(--border-strong);
+  }
+  .lineage-item.status-current-dot::before { background: #a7f070; border-color: #a7f070; }
+  .lineage-item.status-deprecated-dot::before { border-color: #ff8a5b; background: var(--bg-elev); }
+  .lineage-item .li-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .lineage-item .li-name { font-weight: 500; font-size: 13px; }
+  .lineage-item .li-date { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-dim); }
+  .lineage-item .li-meta { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+  /* Detail panel */
+  .detail-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
+    z-index: 100;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 20px;
+    overflow-y: auto;
+  }
+  .detail-overlay.open { display: flex; }
+  .detail-card {
+    background: var(--bg-elev);
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    padding: 24px 28px;
+    max-width: 720px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .detail-card .close {
+    float: right;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+  }
+  .detail-card .close:hover { color: var(--text); }
+  .detail-card h2 { margin: 0 0 4px; font-size: 20px; font-weight: 600; letter-spacing: -0.015em; }
+  .detail-card .detail-vendor { color: var(--text-muted); font-size: 13px; margin-bottom: 20px; }
+  .detail-card .detail-pos { font-size: 14px; padding: 12px 14px; background: var(--bg-elev-2); border-left: 3px solid var(--accent); border-radius: 4px; margin-bottom: 20px; }
+  .detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 24px; }
+  .detail-grid .row { display: flex; flex-direction: column; gap: 3px; }
+  .detail-grid .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .detail-grid .value { font-size: 13px; color: var(--text); }
+  .detail-grid .value a { font-size: 11px; margin-left: 6px; color: var(--text-dim); }
+  .detail-grid .value a:hover { color: var(--accent); }
+  .detail-card .source-link { font-size: 11px; color: var(--text-dim); text-decoration: none; }
+  .detail-card .source-link:hover { color: var(--accent); text-decoration: underline; }
+
+  /* empty state */
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  /* about tab */
+  .about {
+    max-width: 720px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+  .about h2 { font-size: 16px; margin-top: 24px; margin-bottom: 8px; }
+  .about p { color: var(--text); font-size: 13.5px; }
+  .about code { background: var(--bg-elev-2); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+  .about ul { padding-left: 20px; }
+  .about li { margin-bottom: 6px; }
+
+  @media (max-width: 700px) {
+    header, nav.tabs, main { padding-left: 14px; padding-right: 14px; }
+    .lineage-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>LLM Tracker</h1>
+    <div class="subtitle">Lineage &amp; comparison for frontier and open-weights models</div>
+  </div>
+  <div class="meta-info">
+    <div>Last refreshed: <span class="count" id="lastUpdated">–</span></div>
+    <div><span class="count" id="modelCount">–</span> models · <span class="count" id="vendorCount">–</span> vendors</div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab active" data-view="lineage">Lineage</button>
+  <button class="tab" data-view="compare">Compare</button>
+  <button class="tab" data-view="about">About</button>
+</nav>
+
+<main>
+
+<!-- LINEAGE VIEW -->
+<section class="view active" id="view-lineage">
+  <div class="filters">
+    <div class="filter-group">
+      <label>Show</label>
+      <span class="chip on" data-lineage-filter="current">Current</span>
+      <span class="chip" data-lineage-filter="superseded">Superseded</span>
+      <span class="chip" data-lineage-filter="deprecated">Deprecated</span>
+      <span class="chip" data-lineage-filter="legacy">Legacy</span>
+    </div>
+    <div class="filter-group">
+      <label>Openness</label>
+      <span class="chip on" data-lineage-openness="Closed API">Closed</span>
+      <span class="chip on" data-lineage-openness="Open weights">Open</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="reset" onclick="resetLineageFilters()">Reset</div>
+  </div>
+  <div class="lineage-grid" id="lineageGrid"></div>
+</section>
+
+<!-- COMPARE VIEW -->
+<section class="view" id="view-compare">
+  <div class="filters">
+    <div class="filter-group">
+      <label>Vendor</label>
+      <select id="filterVendor"><option value="">All</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Tier</label>
+      <select id="filterTier"><option value="">All</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Openness</label>
+      <select id="filterOpenness">
+        <option value="">All</option>
+        <option value="Closed API">Closed API</option>
+        <option value="Open weights">Open weights</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Status</label>
+      <select id="filterStatus">
+        <option value="current">Current only</option>
+        <option value="">All</option>
+        <option value="deprecated">Deprecated</option>
+        <option value="superseded">Superseded</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Modality</label>
+      <select id="filterModality"><option value="">All</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Min context</label>
+      <select id="filterContext">
+        <option value="0">Any</option>
+        <option value="32000">32K+</option>
+        <option value="128000">128K+</option>
+        <option value="200000">200K+</option>
+        <option value="1000000">1M+</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Max input $/1M</label>
+      <input type="number" id="filterMaxPrice" placeholder="any" step="0.1" min="0" style="width: 70px;">
+    </div>
+    <div class="filter-group">
+      <label>Search</label>
+      <input type="text" id="filterSearch" placeholder="model name…" style="width: 140px;">
+    </div>
+    <div class="spacer"></div>
+    <div class="reset" onclick="resetCompareFilters()">Reset</div>
+  </div>
+  <div class="table-wrap">
+    <table class="compare" id="compareTable">
+      <thead>
+        <tr>
+          <th data-sort="vendor">Vendor</th>
+          <th data-sort="variant">Model</th>
+          <th data-sort="release_date">Released</th>
+          <th data-sort="status">Status</th>
+          <th data-sort="tier">Tier</th>
+          <th data-sort="openness">Openness</th>
+          <th data-sort="modality">Modality</th>
+          <th data-sort="context_window" class="num">Context</th>
+          <th data-sort="price_input_per_1m" class="num">In $/1M</th>
+          <th data-sort="price_output_per_1m" class="num">Out $/1M</th>
+        </tr>
+      </thead>
+      <tbody id="compareBody"></tbody>
+    </table>
+  </div>
+  <div id="compareEmpty" class="empty" style="display:none;">No models match these filters.</div>
+</section>
+
+<!-- ABOUT VIEW -->
+<section class="view" id="view-about">
+  <div class="about">
+    <h2>About this tracker</h2>
+    <p>A living inventory of large language models from the major frontier and open-weights vendors, covering 2023 through the current refresh date. Every non-trivial field links to the source page it was verified from.</p>
+
+    <h2>How to use it</h2>
+    <ul>
+      <li><strong>Lineage</strong> — one column per vendor, oldest to newest, so you can see how each vendor's family tree has evolved (e.g. Anthropic: Claude 2 → Claude 3 → 3.5 → 4 → 4.5 → 5). Toggle the chips to include superseded or deprecated models.</li>
+      <li><strong>Compare</strong> — sortable and filterable table for "what should I use for X?" questions. Filter by vendor, tier, openness, modality, minimum context window, or price cap. Click any column header to sort.</li>
+      <li><strong>Detail</strong> — click any model in either view to open a card with pricing, context, positioning, and links back to the vendor's own source pages.</li>
+    </ul>
+
+    <h2>Fields explained</h2>
+    <ul>
+      <li><strong>Tier</strong> — the vendor's positioning slot: <em>Frontier / flagship</em>, <em>Balanced / mid</em>, <em>Fast / small</em>, <em>Reasoning-optimized</em>, <em>Coding-specialized</em>, <em>Vision-specialized</em>, <em>Nano / on-device</em>.</li>
+      <li><strong>Status</strong> — <em>current</em> (still recommended), <em>superseded</em> (replaced by a newer version), <em>deprecated</em> (formal sunset date announced), <em>legacy</em> (kept for compatibility only).</li>
+      <li><strong>Openness</strong> — Closed API vs. Open weights. The specific license (Apache 2.0, MIT, Llama license, etc.) appears in the detail view.</li>
+      <li><strong>Context window</strong> — max input tokens per the vendor's own model card / API docs.</li>
+      <li><strong>Price</strong> — USD per 1M tokens on the vendor's own primary API at standard tier. Batch discounts, cached-input pricing, and prompt caching are not reflected. For open-weights models without a first-party API, a representative host's price may be shown (noted in the source link).</li>
+    </ul>
+
+    <h2>Refreshing the data</h2>
+    <p>Ask <em>"refresh the LLM tracker"</em> (or "update the LLM tracker") in this project and a live research pass will run against vendor announcement and pricing pages, diff against the current data, and show additions/changes/deprecations before writing anything.</p>
+
+    <h2>Data files</h2>
+    <p>The tracker reads from <code>models.json</code> alongside this page. The full research markdown with every source link is at <code>llm_inventory_YYYY-MM-DD.md</code>.</p>
+  </div>
+</section>
+
+</main>
+
+<!-- Detail overlay -->
+<div class="detail-overlay" id="detailOverlay" onclick="if(event.target===this) closeDetail()">
+  <div class="detail-card" id="detailCard"></div>
+</div>
+
+<script>
+let ALL_MODELS = [];
+let DATA_META = {};
+let sortState = { key: 'release_date', dir: 'desc' };
+let lineageStatusFilters = new Set(['current']);
+let lineageOpennessFilters = new Set(['Closed API', 'Open weights']);
+
+const VENDOR_COLORS = {
+  'OpenAI': '#10a37f',
+  'Anthropic': '#d97757',
+  'Google': '#4285f4',
+  'xAI': '#cccccc',
+  'Meta': '#0668e1',
+  'DeepSeek': '#4a7cff',
+  'Alibaba / Qwen': '#ff6a00',
+  'Mistral': '#ff7000',
+  'Moonshot AI': '#b47cff',
+  'Cohere': '#ff6b9d',
+};
+const TIER_COLORS = {
+  'Frontier / flagship': '#ff8a5b',
+  'Balanced / mid': '#7cc4ff',
+  'Fast / small': '#a7f070',
+  'Reasoning-optimized': '#d17cff',
+  'Coding-specialized': '#ffd166',
+  'Vision-specialized': '#ff6b9d',
+  'Nano / on-device': '#6c7280',
+};
+
+function fmtNum(n) {
+  if (n === null || n === undefined) return '—';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 2).replace(/\.0+$/,'') + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(n % 1_000 === 0 ? 0 : 1).replace(/\.0$/,'') + 'K';
+  return n.toString();
+}
+function fmtPrice(p) {
+  if (p === null || p === undefined) return '—';
+  if (p < 0.1) return '$' + p.toFixed(3);
+  if (p < 10) return '$' + p.toFixed(2);
+  return '$' + p.toFixed(0);
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  return d;
+}
+
+async function loadData() {
+  try {
+    const res = await fetch('data/models.json?ts=' + Date.now());
+    const data = await res.json();
+    ALL_MODELS = data.models;
+    DATA_META = data;
+    document.getElementById('lastUpdated').textContent = data.last_updated;
+    document.getElementById('modelCount').textContent = data.count;
+    document.getElementById('vendorCount').textContent = data.vendors.length;
+    populateFilters();
+    renderLineage();
+    renderCompare();
+  } catch (e) {
+    document.getElementById('lineageGrid').innerHTML = '<div class="empty">Failed to load models.json — ' + e.message + '</div>';
+  }
+}
+
+function populateFilters() {
+  const vSel = document.getElementById('filterVendor');
+  DATA_META.vendors.forEach(v => {
+    const o = document.createElement('option'); o.value = v; o.textContent = v; vSel.appendChild(o);
+  });
+  const tiers = [...new Set(ALL_MODELS.map(m => m.tier).filter(Boolean))].sort();
+  const tSel = document.getElementById('filterTier');
+  tiers.forEach(t => { const o=document.createElement('option'); o.value=t; o.textContent=t; tSel.appendChild(o); });
+  const mods = [...new Set(ALL_MODELS.map(m => m.modality).filter(Boolean))].sort();
+  const mSel = document.getElementById('filterModality');
+  mods.forEach(m => { const o=document.createElement('option'); o.value=m; o.textContent=m; mSel.appendChild(o); });
+}
+
+/* ---------- LINEAGE ---------- */
+function renderLineage() {
+  const grid = document.getElementById('lineageGrid');
+  grid.innerHTML = '';
+  const vendors = DATA_META.vendors.slice().sort();
+  vendors.forEach(vendor => {
+    let models = ALL_MODELS.filter(m => m.vendor === vendor);
+    models = models.filter(m => lineageStatusFilters.has(m.status));
+    models = models.filter(m => !m.openness || lineageOpennessFilters.has(m.openness));
+    if (models.length === 0) return;
+    // sort oldest to newest
+    models.sort((a, b) => (a.release_date || '') > (b.release_date || '') ? 1 : -1);
+
+    const col = document.createElement('div');
+    col.className = 'vendor-column';
+    const color = VENDOR_COLORS[vendor] || '#7cc4ff';
+    col.innerHTML = `
+      <div class="vendor-header">
+        <div class="name"><span class="vendor-swatch" style="background:${color}"></span>${vendor}</div>
+        <div class="count">${models.length} model${models.length===1?'':'s'}</div>
+      </div>
+      <div class="timeline">
+        ${models.map(m => `
+          <div class="lineage-item status-${m.status}-dot" data-id="${escapeAttr(m.id)}" onclick="openDetail('${escapeAttr(m.id)}')">
+            <div class="li-top">
+              <div class="li-name">${escapeHtml(m.variant)}</div>
+              <div class="li-date">${m.release_date || '—'}</div>
+            </div>
+            <div class="li-meta">
+              <span class="tier-dot" style="background:${TIER_COLORS[m.tier] || '#6c7280'}"></span>${escapeHtml(m.tier || '—')}
+              · ${escapeHtml(m.family)}
+              · ${m.context_window ? fmtNum(m.context_window) + ' ctx' : '—'}
+              ${m.price_input_per_1m !== null ? ' · ' + fmtPrice(m.price_input_per_1m) + '/1M in' : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    grid.appendChild(col);
+  });
+  if (!grid.children.length) {
+    grid.innerHTML = '<div class="empty">No models match the current filters.</div>';
+  }
+}
+
+document.querySelectorAll('[data-lineage-filter]').forEach(el => {
+  el.addEventListener('click', () => {
+    const v = el.dataset.lineageFilter;
+    if (lineageStatusFilters.has(v)) lineageStatusFilters.delete(v);
+    else lineageStatusFilters.add(v);
+    el.classList.toggle('on');
+    renderLineage();
+  });
+});
+document.querySelectorAll('[data-lineage-openness]').forEach(el => {
+  el.addEventListener('click', () => {
+    const v = el.dataset.lineageOpenness;
+    if (lineageOpennessFilters.has(v)) lineageOpennessFilters.delete(v);
+    else lineageOpennessFilters.add(v);
+    el.classList.toggle('on');
+    renderLineage();
+  });
+});
+function resetLineageFilters() {
+  lineageStatusFilters = new Set(['current']);
+  lineageOpennessFilters = new Set(['Closed API', 'Open weights']);
+  document.querySelectorAll('[data-lineage-filter]').forEach(el => {
+    el.classList.toggle('on', el.dataset.lineageFilter === 'current');
+  });
+  document.querySelectorAll('[data-lineage-openness]').forEach(el => el.classList.add('on'));
+  renderLineage();
+}
+
+/* ---------- COMPARE ---------- */
+function renderCompare() {
+  const vendor = document.getElementById('filterVendor').value;
+  const tier = document.getElementById('filterTier').value;
+  const openness = document.getElementById('filterOpenness').value;
+  const status = document.getElementById('filterStatus').value;
+  const modality = document.getElementById('filterModality').value;
+  const minCtx = +document.getElementById('filterContext').value;
+  const maxPrice = document.getElementById('filterMaxPrice').value;
+  const search = document.getElementById('filterSearch').value.trim().toLowerCase();
+
+  let rows = ALL_MODELS.filter(m => {
+    if (vendor && m.vendor !== vendor) return false;
+    if (tier && m.tier !== tier) return false;
+    if (openness && m.openness !== openness) return false;
+    if (status && m.status !== status) return false;
+    if (modality && m.modality !== modality) return false;
+    if (minCtx && (!m.context_window || m.context_window < minCtx)) return false;
+    if (maxPrice !== '' && (m.price_input_per_1m === null || m.price_input_per_1m > +maxPrice)) return false;
+    if (search) {
+      const hay = (m.vendor + ' ' + m.family + ' ' + m.variant).toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  // sort
+  const { key, dir } = sortState;
+  rows.sort((a, b) => {
+    let va = a[key], vb = b[key];
+    if (va === null || va === undefined) va = (dir === 'asc' ? '\uffff' : '');
+    if (vb === null || vb === undefined) vb = (dir === 'asc' ? '\uffff' : '');
+    if (typeof va === 'number' && typeof vb === 'number') return dir === 'asc' ? va - vb : vb - va;
+    return dir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+  });
+
+  const body = document.getElementById('compareBody');
+  body.innerHTML = rows.map(m => `
+    <tr onclick="openDetail('${escapeAttr(m.id)}')">
+      <td class="col-vendor"><span class="vendor-swatch" style="background:${VENDOR_COLORS[m.vendor]||'#7cc4ff'}"></span>${escapeHtml(m.vendor)}</td>
+      <td class="col-variant">${escapeHtml(m.variant)}<div style="font-size:11px;color:var(--text-dim)">${escapeHtml(m.family)}</div></td>
+      <td class="mono">${m.release_date || '—'}</td>
+      <td><span class="status-badge status-${m.status}">${m.status || '—'}</span></td>
+      <td><span class="tier-dot" style="background:${TIER_COLORS[m.tier]||'#6c7280'}"></span>${escapeHtml(m.tier || '—')}</td>
+      <td>${escapeHtml(m.openness || '—')}</td>
+      <td>${escapeHtml(m.modality || '—')}</td>
+      <td class="num">${m.context_window ? fmtNum(m.context_window) : '—'}</td>
+      <td class="num">${fmtPrice(m.price_input_per_1m)}</td>
+      <td class="num">${fmtPrice(m.price_output_per_1m)}</td>
+    </tr>
+  `).join('');
+  document.getElementById('compareEmpty').style.display = rows.length ? 'none' : 'block';
+
+  // update sort indicators
+  document.querySelectorAll('#compareTable thead th').forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+    if (th.dataset.sort === sortState.key) th.classList.add(sortState.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+  });
+}
+
+document.querySelectorAll('#compareTable thead th').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.sort;
+    if (sortState.key === key) sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+    else { sortState.key = key; sortState.dir = ['context_window','price_input_per_1m','price_output_per_1m','release_date'].includes(key) ? 'desc' : 'asc'; }
+    renderCompare();
+  });
+});
+['filterVendor','filterTier','filterOpenness','filterStatus','filterModality','filterContext','filterMaxPrice','filterSearch'].forEach(id => {
+  document.getElementById(id).addEventListener('input', renderCompare);
+});
+function resetCompareFilters() {
+  ['filterVendor','filterTier','filterOpenness','filterModality','filterMaxPrice','filterSearch'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('filterStatus').value = 'current';
+  document.getElementById('filterContext').value = '0';
+  renderCompare();
+}
+
+/* ---------- DETAIL ---------- */
+function openDetail(id) {
+  const m = ALL_MODELS.find(x => x.id === id);
+  if (!m) return;
+  const linkOrDash = (v, src, mono=false) => {
+    if (v === null || v === undefined || v === '') return '<span style="color:var(--text-dim)">—</span>';
+    const val = mono ? `<span class="mono">${escapeHtml(String(v))}</span>` : escapeHtml(String(v));
+    return src ? `${val} <a href="${escapeAttr(src)}" target="_blank" rel="noopener">source ↗</a>` : val;
+  };
+  const card = document.getElementById('detailCard');
+  card.innerHTML = `
+    <button class="close" onclick="closeDetail()" aria-label="Close">×</button>
+    <h2>${escapeHtml(m.variant)}</h2>
+    <div class="detail-vendor"><span class="vendor-swatch" style="background:${VENDOR_COLORS[m.vendor]||'#7cc4ff'}"></span>${escapeHtml(m.vendor)} · ${escapeHtml(m.family)} · ${escapeHtml(m.country || '')}</div>
+    ${m.positioning ? `<div class="detail-pos">"${escapeHtml(m.positioning)}"${m.positioning_source ? ` <a href="${escapeAttr(m.positioning_source)}" target="_blank" class="source-link">source ↗</a>` : ''}</div>` : ''}
+    <div class="detail-grid">
+      <div class="row"><div class="label">Released</div><div class="value">${linkOrDash(m.release_date, m.release_date_source, true)}</div></div>
+      <div class="row"><div class="label">Status</div><div class="value">${linkOrDash(m.status_raw || m.status, m.status_source)}</div></div>
+      <div class="row"><div class="label">Openness</div><div class="value">${linkOrDash(m.openness_raw || m.openness, m.openness_source)}</div></div>
+      <div class="row"><div class="label">License</div><div class="value">${m.license ? escapeHtml(m.license) : '<span style="color:var(--text-dim)">—</span>'}</div></div>
+      <div class="row"><div class="label">Tier</div><div class="value">${linkOrDash(m.tier, m.tier_source)}</div></div>
+      <div class="row"><div class="label">Modality</div><div class="value">${linkOrDash(m.modality, m.modality_source)}</div></div>
+      <div class="row"><div class="label">Context window</div><div class="value">${linkOrDash(m.context_window ? fmtNum(m.context_window) + ' (' + m.context_window.toLocaleString() + ' tokens)' : null, m.context_window_source)}</div></div>
+      <div class="row"><div class="label">Country</div><div class="value">${escapeHtml(m.country || '—')}</div></div>
+      <div class="row"><div class="label">Input $/1M tokens</div><div class="value">${linkOrDash(m.price_input_per_1m !== null ? '$' + m.price_input_per_1m : null, m.price_input_source, true)}</div></div>
+      <div class="row"><div class="label">Output $/1M tokens</div><div class="value">${linkOrDash(m.price_output_per_1m !== null ? '$' + m.price_output_per_1m : null, m.price_output_source, true)}</div></div>
+    </div>
+  `;
+  document.getElementById('detailOverlay').classList.add('open');
+}
+function closeDetail() { document.getElementById('detailOverlay').classList.remove('open'); }
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDetail(); });
+
+/* ---------- TABS ---------- */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('view-' + tab.dataset.view).classList.add('active');
+  });
+});
+
+/* ---------- utilities ---------- */
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function escapeAttr(s) { return escapeHtml(s); }
+
+loadData();
+</script>
+
+</body>
+</html>
