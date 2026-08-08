@@ -1,6 +1,6 @@
 {
-  "last_updated": "2026-08-04",
-  "source_document": "llm_inventory_2026-08-04.md",
+  "last_updated": "2026-08-08",
+  "source_document": "inventory_2026-08-08.md",
   "notes": "Every field with a *_source suffix links to the exact URL the value was verified against. Prices are USD per 1M tokens on vendor primary API when available.",
   "vendors": [
     "Alibaba / Qwen",
@@ -14,7 +14,7 @@
     "OpenAI",
     "xAI"
   ],
-  "count": 165,
+  "count": 167,
   "models": [
     {
       "id": "alibaba___qwen__qwen1.5_0.5b\u201372b",
@@ -391,6 +391,35 @@
       "price_output_source": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
       "positioning": "Current mainstream hosted Qwen tier, discounted",
       "positioning_source": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+      "country": "China"
+    },
+    {
+      "id": "alibaba___qwen__qwen3.8-max",
+      "vendor": "Alibaba / Qwen",
+      "family": "Qwen3.8",
+      "variant": "qwen3.8-max",
+      "release_date": "2026-08-03",
+      "release_date_source": "https://docs.qwencloud.com/changelog/models",
+      "status": "current",
+      "status_raw": "current",
+      "status_source": "https://docs.qwencloud.com/changelog/models",
+      "deprecation_date": null,
+      "openness": "Closed API",
+      "openness_raw": "Closed API",
+      "license": null,
+      "openness_source": "https://docs.qwencloud.com/changelog/models",
+      "tier": "Frontier / flagship",
+      "tier_source": "https://www.alibabacloud.com/blog/alibaba-unveils-qwen3-8-max-its-largest-and-most-capable-flagship-model-to-date_603420",
+      "modality": "Multimodal (text/vision)",
+      "modality_source": "https://docs.qwencloud.com/changelog/models",
+      "context_window": 1000000,
+      "context_window_source": "https://docs.qwencloud.com/changelog/models",
+      "price_input_per_1m": null,
+      "price_input_source": null,
+      "price_output_per_1m": null,
+      "price_output_source": null,
+      "positioning": "Flagship 2.4T MoE with hybrid thinking on by default",
+      "positioning_source": "https://www.alibabacloud.com/blog/alibaba-unveils-qwen3-8-max-its-largest-and-most-capable-flagship-model-to-date_603420",
       "country": "China"
     },
     {
@@ -940,8 +969,8 @@
       "price_input_source": "https://docs.claude.com/en/docs/about-claude/models/overview",
       "price_output_per_1m": 50.0,
       "price_output_source": "https://docs.claude.com/en/docs/about-claude/models/overview",
-      "positioning": "Next-generation intelligence for long-running agents",
-      "positioning_source": "https://docs.claude.com/en/docs/about-claude/models/overview",
+      "positioning": "Long-running agents; retrained biology safeguards Aug 2026",
+      "positioning_source": "https://www.anthropic.com/news/improving-fable-5-s-biology-safeguards",
       "country": "USA"
     },
     {
@@ -3120,6 +3149,35 @@
       "country": "France"
     },
     {
+      "id": "mistral__shieldstral",
+      "vendor": "Mistral",
+      "family": "Shieldstral",
+      "variant": "Shieldstral",
+      "release_date": "2026-08-04",
+      "release_date_source": "https://mistral.ai/news/shieldstral/",
+      "status": "current",
+      "status_raw": "current",
+      "status_source": "https://mistral.ai/news/shieldstral/",
+      "deprecation_date": null,
+      "openness": "Open weights",
+      "openness_raw": "Open weights (Apache 2.0)",
+      "license": "Apache 2.0",
+      "openness_source": "https://mistral.ai/news/shieldstral/",
+      "tier": "Nano / on-device",
+      "tier_source": "https://mistral.ai/news/shieldstral/",
+      "modality": "Multimodal (text/vision)",
+      "modality_source": "https://mistral.ai/news/shieldstral/",
+      "context_window": null,
+      "context_window_source": null,
+      "price_input_per_1m": null,
+      "price_input_source": null,
+      "price_output_per_1m": null,
+      "price_output_source": null,
+      "positioning": "3B open safety classifier for text and images",
+      "positioning_source": "https://mistral.ai/news/shieldstral/",
+      "country": "France"
+    },
+    {
       "id": "moonshot_ai__moonshot-v1-8k___32k___128k_+_vision-preview",
       "vendor": "Moonshot AI",
       "family": "Moonshot v1",
@@ -4362,8 +4420,8 @@
       "price_input_source": "https://developers.openai.com/api/docs/models/gpt-5.6-sol.md",
       "price_output_per_1m": 30.0,
       "price_output_source": "https://developers.openai.com/api/docs/models/gpt-5.6-sol.md",
-      "positioning": "Current flagship with ultra effort setting",
-      "positioning_source": "https://openai.com/index/gpt-5-6/",
+      "positioning": "Flagship with effort slider; Fast mode now accepts long context",
+      "positioning_source": "https://openai.com/index/improving-gpt-5-6-sol-in-chatgpt/",
       "country": "USA"
     },
     {
@@ -4391,8 +4449,8 @@
       "price_input_source": "https://developers.openai.com/api/docs/models/gpt-5.6-terra.md",
       "price_output_per_1m": 12.0,
       "price_output_source": "https://developers.openai.com/api/docs/models/gpt-5.6-terra.md",
-      "positioning": "Mid tier of 5.6; price cut 20% in July",
-      "positioning_source": "https://openai.com/index/gpt-5-6/",
+      "positioning": "Mid tier of 5.6; Fast mode now handles long context",
+      "positioning_source": "https://developers.openai.com/api/docs/changelog",
       "country": "USA"
     },
     {
@@ -4420,8 +4478,8 @@
       "price_input_source": "https://developers.openai.com/api/docs/models/gpt-5.6-luna.md",
       "price_output_per_1m": 1.2,
       "price_output_source": "https://developers.openai.com/api/docs/models/gpt-5.6-luna.md",
-      "positioning": "Cheap high-throughput tier; price cut 80% in July",
-      "positioning_source": "https://openai.com/index/gpt-5-6/",
+      "positioning": "Free/Go default in ChatGPT; cheap high-throughput API tier",
+      "positioning_source": "https://openai.com/index/improving-gpt-5-6-sol-in-chatgpt/",
       "country": "USA"
     },
     {
