@@ -6,7 +6,7 @@ from pathlib import Path
 
 # Paths are relative to the repo root. Update SRC when you add a new dated inventory file.
 REPO_ROOT = Path(__file__).resolve().parent.parent
-SRC = REPO_ROOT / "data" / "inventory_2026-08-04.md"
+SRC = REPO_ROOT / "data" / "inventory_2026-10-05.md"
 OUT = REPO_ROOT / "data" / "models.json"
 
 # Regex to extract markdown links: [text](url). Also captures plain text.
@@ -210,8 +210,8 @@ def main():
     models.sort(key=sort_key)
 
     payload = {
-        "last_updated": "2026-08-04",
-        "source_document": "llm_inventory_2026-08-04.md",
+        "last_updated": "2026-10-05",
+        "source_document": "llm_inventory_2026-10-05.md",
         "notes": "Every field with a *_source suffix links to the exact URL the value was verified against. Prices are USD per 1M tokens on vendor primary API when available.",
         "vendors": sorted(set(m["vendor"] for m in models)),
         "count": len(models),
